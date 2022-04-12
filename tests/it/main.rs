@@ -1,5 +1,6 @@
 //! Integration tests
 use assert_fs::prelude::*;
+use transactions::{Client, ClientId, Record};
 
 use std::collections::HashMap;
 
@@ -18,36 +19,11 @@ withdrawal,2,5,3.0
 
     let records = transactions::Record::from_path(file.path())?;
     let expected_records = vec![
-        transactions::Record {
-            r#type: transactions::Type::Deposit,
-            client: 1,
-            tx: 1,
-            amount: Some(1.0),
-        },
-        transactions::Record {
-            r#type: transactions::Type::Deposit,
-            client: 2,
-            tx: 2,
-            amount: Some(2.0),
-        },
-        transactions::Record {
-            r#type: transactions::Type::Deposit,
-            client: 1,
-            tx: 3,
-            amount: Some(2.0),
-        },
-        transactions::Record {
-            r#type: transactions::Type::Withdrawal,
-            client: 1,
-            tx: 4,
-            amount: Some(1.5),
-        },
-        transactions::Record {
-            r#type: transactions::Type::Withdrawal,
-            client: 2,
-            tx: 5,
-            amount: Some(3.0),
-        },
+        Record::new(transactions::Type::Deposit, 1, 1, Some(1.0)),
+        Record::new(transactions::Type::Deposit, 2, 2, Some(2.0)),
+        Record::new(transactions::Type::Deposit, 1, 3, Some(2.0)),
+        Record::new(transactions::Type::Withdrawal, 1, 4, Some(1.5)),
+        Record::new(transactions::Type::Withdrawal, 2, 5, Some(3.0)),
     ];
     assert_eq!(records, expected_records);
 
@@ -56,81 +32,33 @@ withdrawal,2,5,3.0
 
 #[test]
 fn process() -> Result<(), Box<dyn std::error::Error>> {
-    let records: Vec<transactions::Record> = vec![
-        transactions::Record {
-            r#type: transactions::Type::Deposit,
-            client: 1,
-            tx: 1,
-            amount: Some(1.0),
-        },
-        transactions::Record {
-            r#type: transactions::Type::Deposit,
-            client: 2,
-            tx: 2,
-            amount: Some(2.0),
-        },
-        transactions::Record {
-            r#type: transactions::Type::Deposit,
-            client: 1,
-            tx: 3,
-            amount: Some(2.0),
-        },
-        transactions::Record {
-            r#type: transactions::Type::Withdrawal,
-            client: 1,
-            tx: 4,
-            amount: Some(1.5),
-        },
-        transactions::Record {
-            r#type: transactions::Type::Withdrawal,
-            client: 2,
-            tx: 5,
-            amount: Some(3.0),
-        },
+    let records: Vec<Record> = vec![
+        Record::new(transactions::Type::Deposit, 1, 1, Some(1.0)),
+        Record::new(transactions::Type::Deposit, 2, 2, Some(2.0)),
+        Record::new(transactions::Type::Deposit, 1, 3, Some(2.0)),
+        Record::new(transactions::Type::Withdrawal, 1, 4, Some(1.5)),
+        Record::new(transactions::Type::Withdrawal, 2, 5, Some(3.0)),
+        Record::new(transactions::Type::Withdrawal, 2, 6, Some(-3.0)),
     ];
-    let expected_result: HashMap<u16, transactions::Client> = [
+    let expected_result: HashMap<ClientId, Client> = [
         (
             1,
             transactions::Client {
-                records: vec![
-                    transactions::Record {
-                        r#type: transactions::Type::Deposit,
-                        client: 1,
-                        tx: 1,
-                        amount: Some(1.0),
-                    },
-                    transactions::Record {
-                        r#type: transactions::Type::Deposit,
-                        client: 1,
-                        tx: 3,
-                        amount: Some(2.0),
-                    },
-                    transactions::Record {
-                        r#type: transactions::Type::Withdrawal,
-                        client: 1,
-                        tx: 4,
-                        amount: Some(1.5),
-                    },
-                ],
+                client: 1,
+                available: 1.5,
+                held: 0.0,
+                total: 1.5,
+                locked: false,
             },
         ),
         (
             2,
             transactions::Client {
-                records: vec![
-                    transactions::Record {
-                        r#type: transactions::Type::Deposit,
-                        client: 2,
-                        tx: 2,
-                        amount: Some(2.0),
-                    },
-                    transactions::Record {
-                        r#type: transactions::Type::Withdrawal,
-                        client: 2,
-                        tx: 5,
-                        amount: Some(3.0),
-                    },
-                ],
+                client: 2,
+                available: 2.0,
+                held: 0.0,
+                total: 2.0,
+                locked: false,
             },
         ),
     ]

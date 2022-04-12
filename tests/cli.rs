@@ -154,3 +154,25 @@ chargeback,1,1,
 
     Ok(())
 }
+
+#[test]
+fn padding() -> Result<(), Box<dyn std::error::Error>> {
+    let file = assert_fs::NamedTempFile::new("padding.csv")?;
+    file.write_str(
+        r#"type, client, tx, amount
+deposit, 1, 1, 1.0
+deposit, 1, 3, 2.0
+withdrawal, 1, 4, 1.5
+"#,
+    )?;
+    let mut cmd = Command::cargo_bin("transactions")?;
+
+    cmd.arg(file.path());
+    cmd.assert().stdout(predicate::eq(
+        br#"client,available,held,total,locked
+1,1.5,0.0,1.5,false
+"# as &[u8],
+    ));
+
+    Ok(())
+}

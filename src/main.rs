@@ -27,9 +27,9 @@ fn main() -> Result<()> {
     let clients = Record::process(&records)?;
 
     let mut wtr = Writer::from_writer(vec![]);
-    for (_, client) in clients {
-        wtr.serialize(client.output())?;
-    }
+    clients
+        .values()
+        .try_for_each(|client| wtr.serialize(client))?;
 
     print!("{}", String::from_utf8(wtr.into_inner()?)?);
 
